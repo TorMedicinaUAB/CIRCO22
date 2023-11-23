@@ -39,7 +39,7 @@ datos_tabla_basal <-   datos %>%
 
 
 
-CreateTableOne(
+Tabla_basal <- CreateTableOne(
   data = datos_tabla_basal , 
   # Ponemos los nombres de todas las variables, excepto la de estratificación
   vars= datos_tabla_basal %>% select(-Grup_IQ) %>%   names(), 
@@ -48,6 +48,8 @@ CreateTableOne(
   # Extraemos los nombres de las variables factor, EXCEPTO la variable por la que estratificaremos
   factorVars= datos_tabla_basal %>% select(where(is.factor )) %>% select(-Grup_IQ) %>%  names(),
   testExact = fisher.test,
+  addOverall = TRUE, 
+  argsApprox = list(correct = T), 
   # Muestra los NA en cada categoría
   includeNA = T) %>% 
   print(
@@ -57,11 +59,44 @@ CreateTableOne(
     # de base, TableOne crea una categoria basal, con este argument, muestra todos los niveles
     showAllLevels = T ,
     noSpaces = F, 
-    smd = T,
-  ) %>% 
-  write.csv(., file = "Outputs/Tablas_basales/Tabla_basal.csv")
+    smd = T
+  ) %>%  
+  as_tibble(., rownames = "Variables") %>% 
+  mutate(aux = str_extract(Variables,"(.*) \\(" ) ) %>% 
+  mutate(aux = str_remove(aux," \\(" ) )
 
+Missings <- datos_tabla_basal %>% 
+  select(Grup_IQ,where(is.numeric))  %>% 
+  group_by(Grup_IQ) %>% 
+  summarize_all(~sum(is.na(.))) %>% 
+  pivot_longer(-Grup_IQ, names_to = "Variables", values_to = "Missings") %>% 
+  pivot_wider(names_from = Grup_IQ , values_from = Missings) %>% 
+  mutate(Variables= paste(Variables, '(missing values)' )) %>% 
+  mutate(aux = str_extract(Variables,"(.*) \\(" ) ) %>% 
+  mutate(aux = str_remove(aux," \\(" ) ) %>% 
+  mutate_all(as.character )
 
-datos_tabla_basal %>% 
-  select(Grup_IQ, Leucos_preIQ) %>% 
-  filter(Grup_IQ=='No IQ') %>%  view()
+Lista_basal <- Tabla_basal %>%  
+  # fill(aux,.direction = 'down') %>% 
+  full_join(Missings, by= c('aux','No IQ','Si IQ', 'Variables')) %>% 
+  mutate(aux_2 = str_extract(Variables,"^.{1,}")) %>% 
+  fill(aux,.direction = 'down') %>%
+  fill(aux_2,.direction = 'down') %>% 
+  mutate(aux_3 = case_when(
+    Variables == 'n'~1,
+    str_detect(aux_2,'Pes|sexe_home|edat|Talla|IMC') ~ 2,
+    str_detect(aux_2,'IQR|missing') ~ 3, 
+    !str_detect(aux_2,'IQR|missing')|is.na(Variables) ~ 4)) %>%
+  arrange(aux_3, aux, aux_2,level) %>%
+  group_split(aux_3) %>%  
+  as.list()
+
+Lista_basal[1:3] <- Lista_basal[1:3] %>% 
+  map(~ mutate_all(..1, ~replace_na(.,'')))
+
+Tabla_basal <- Lista_basal %>%  
+  bind_rows() %>% 
+  select(-matches('aux'))
+
+Tabla_basal %>% 
+  writexl::write_xlsx(.,'Outputs/Tablas_basales/Tabla_basal_con_missings.xlsx')
