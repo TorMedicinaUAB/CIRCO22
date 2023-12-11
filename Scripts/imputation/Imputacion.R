@@ -10,8 +10,8 @@ datos_basales_sin_NA_extremos <- datos_basales %>%
 imputation_model <- mice(
   data = datos_basales_sin_NA_extremos, 
   method = '2l.bin', 
-  maxit = 2000, 
-  m = 1)
+  maxit = 100, 
+  m = 1,verbose=F)
 
 # Imputing missing values
 
