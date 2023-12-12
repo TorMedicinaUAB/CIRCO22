@@ -1,8 +1,9 @@
 source('Scripts/Lectura_datos_basales.R')
 
+
 datos_imputados <- readRDS('Datos/Imputados/Datos_imputados.rds')
 
-datos_imputados
+
 
 CreateTableOne(
   # Argumento para poner de donde extraremos los datos
@@ -36,5 +37,59 @@ CreateTableOne(
   mutate(SMD=as.numeric(SMD)) %>% 
   mutate(Variables = str_extract(Variables, '^[^ (]+')) %>% 
   filter(!is.na(SMD)) %>% 
-  filter(SMD<0.1)
-  
+  filter(SMD>0.1) %>% 
+  arrange(desc(SMD))-> var_descompensades
+
+datos_imputados$VE_basal
+var_descompensades
+datos_imputados$etiol_OH
+
+# 'I(^2)'
+# I(VE_basal^2)
+
+formula_1 <- as.formula(
+  'Grup_IQ ~ VE_basal+I(edat_IQ^2)+
+  SignesIndirectes_HTP+
+  HVPG_10+Charlson_Index+etiol_OH'
+)
+
+mod_propensity <- glm(
+  formula = formula_1, 
+  data = datos_imputados, 
+  family=binomial(link="logit") )
+
+datos_imputados_propensity <- datos_imputados %>% 
+  mutate(prediciones=predict(mod_propensity,datos_imputados,type="response") )
+
+datos_imputados_propensity$prediciones
+
+datos_imputados %>% 
+  group_by(Grup_IQ) %>% 
+  count()
+
+datos_imputados %>% 
+  count()
+
+datos_imputados_propensity <- datos_imputados_propensity %>% 
+  mutate(standarized_weights = case_when(
+    Grup_IQ == 'Si IQ' ~ (177/(371))/ (  prediciones),
+    Grup_IQ == 'No IQ' ~ (194/(371))/ (1-prediciones) 
+  )) 
+
+
+datos_imputados_propensity$standarized_weights
+
+iptwdatos <- svydesign(
+  ids = ~ 1, 
+  data = datos_imputados_propensity,
+  strata = ~Grup_IQ ,
+  weights = ~ datos_imputados_propensity$standarized_weights)
+
+tabWeighted <- svyCreateTableOne(
+  vars= datos_imputados %>% select(-Grup_IQ) %>% names(),
+  strata = "Grup_IQ", 
+  data = iptwdatos, 
+  smd =TRUE)
+
+print(tabWeighted, smd = TRUE)
+

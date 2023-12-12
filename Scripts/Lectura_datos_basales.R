@@ -9,20 +9,31 @@ datos_basales <- datos %>%
     # Bioquimicas
     Enol_Actiu,
     DIabetes,
+    etiol_OH,
+    TTO_Estatinas,
     HTA,
     # las variable dislipemia hay que crearla a partir de enfermedades asociadas
     # hay que crear desde malalties_associades1 que contengan los valores: 6, 13,17 (los que contienen dlp (codigo de dislipemia), 
     # el resto de codigos es que no tienen dislipemia
     malalties_associades1,
+    ttBBNS_Cronic,
+    BBprevis,
+    BBprevis,
     plaquetes_preIQ:K_preIQ,
+    BB_mgdL_preIQ,
+    MidaMelsa_mm,
+    INR_preIQ,
+    colaterals_shunts,
     etiologiaCH,
     #vareice esfofagicas basales
     VE_basal,
+    SignesIndirectes_HTP,
     # varices grastricas
     VG_fúndiques,
     # rigidez de higado
     matches('FsC'),
     matches('HVPG'),
+    Charlson_Index,
     Pughpunts_basal,
     Pughclasse_basal,
     HCC_prev,
@@ -40,8 +51,4 @@ datos_basales <- datos %>%
   mutate_if(function(x) inherits(x, "haven_labelled"), ~ haven::as_factor(.)) %>% 
   # reordenamos un poco el data.frame para que sea fácil de seguir luego
   select( Grup_IQ,edat_IQ,sexe_home,Pes,Talla_m,IMC, where(is.numeric), where(is.factor))
-
-
-datos_basales_sin_NA_extremos <- datos_basales %>%  
-  select(-c(FA_preIQ,FsC_Elastografia,GGT_preIQ,HVPG_basal,INR_preIQ,K_preIQ,Leucos_preIQ,MELD_1anyspostIQ,NA_preIQ_,PCR_preIQ))
 
