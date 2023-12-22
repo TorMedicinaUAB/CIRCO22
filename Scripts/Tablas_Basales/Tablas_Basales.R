@@ -17,8 +17,8 @@ datos_tabla_basal <-   datos %>%
     # hay que crear desde malalties_associades1 que contengan los valores: 6, 13,17 (los que contienen dlp (codigo de dislipemia), 
     # el resto de codigos es que no tienen dislipemia
     malalties_associades1,
-    
     plaquetes_preIQ:K_preIQ,
+    SignesIndirectes_HTP,
     etiologiaCH,
     #vareice esfofagicas basales
     VE_basal,

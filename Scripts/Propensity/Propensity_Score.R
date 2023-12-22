@@ -45,6 +45,8 @@ datos_imputados_transformados_propensity <- datos_imputados %>%
     DIabetes = droplevels(DIabetes,c('Metformina', 'Altres','ADO', 'dieta', 'ADO+Insulina','metformina+altres','ADO'))
   )
 
+
+
 variables_propensity <- c(
   'edat_IQ','Charlson_Index',
   'plaquetes_preIQ','FsC_Elastografia', 
@@ -57,16 +59,17 @@ mod_propensity <- glm(
     # DIabetes +
     I(edat_IQ^2) +
     log(edat_IQ) +
+    # HVPG_basal+
     I(Charlson_Index) +
     log(plaquetes_preIQ) +
-    I(FsC_Elastografia^(2)) +
+    # I(FsC_Elastografia^(2)) + exceso de missings 
     log(MidaMelsa_mm) +
     Pughpunts_basal+
     log(Pes)+
     IMC+
     VG_fúndiques+
     I(Creat_mgdL_preIQ^(2)) +
-    ALT_preIQ+
+    ALT_preIQ +
     TTO_Estatinas+
     log(AST_preIQ) + I(AST_preIQ^(2))
   , 
@@ -109,4 +112,12 @@ tabWeighted <- svyCreateTableOne(
 print(tabWeighted, smd = TRUE)
 
 
+datos_imputados_propensity %>% 
+  ggplot(aes(standarized_weights, fill= Grup_IQ )) +
+  geom_density()
+
+
+datos_imputados_propensity %>% 
+  ggplot(aes(prediciones, fill= Grup_IQ )) +
+  geom_histogram(color='black',alpha=0.8)
 
