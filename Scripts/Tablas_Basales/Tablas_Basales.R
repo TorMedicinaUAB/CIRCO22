@@ -149,6 +149,8 @@ Tabla_basal <- Lista_basal %>%
   bind_rows() %>% 
   select(-matches('aux'))
 
+Tabla_basal
+
 # Exportamos la tabla final conseguida----
 
 # Tabla_basal %>%
