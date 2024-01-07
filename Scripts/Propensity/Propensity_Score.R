@@ -3,6 +3,7 @@ library('survey')
 
 datos_imputados <- readRDS('Datos/Imputados/Datos_imputados.rds')
 
+
 # CreateTableOne(
 #   # Argumento para poner de donde extraremos los datos
 #   data = datos_imputados , 
