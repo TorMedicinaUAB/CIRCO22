@@ -57,38 +57,36 @@ datos_imputados_propensity <- datos_imputados_propensity %>%
 
 
 
-iptwdatos_propensity <- svydesign(
+iptwdatos <- svydesign(
   ids = ~ 1, 
   data = datos_imputados_transformados_propensity_2,
   strata = ~Grup_IQ,
   weights = ~ datos_imputados_propensity$standarized_weights)
 
-tabWeighted_full <- svyCreateTableOne(
+tabWeighted <- svyCreateTableOne(
   vars= datos_imputados_transformados_propensity_2 %>% select(-Grup_IQ) %>% names(),
   strata = "Grup_IQ", 
   data = iptwdatos_propensity, 
   smd =TRUE)
 
-print(tabWeighted_full, smd = TRUE)
-
-
-
+print(tabWeighted, smd = TRUE)
 
 
 # datos_imputados_propensity$standarized_weights
 
-iptwdatos <- svydesign(
+iptwdatos_propensity <- svydesign(
   ids = ~ 1, 
   data = datos_imputados_transformados_propensity,
   strata = ~Grup_IQ,
   weights = ~ datos_imputados_propensity$standarized_weights)
 
-tabWeighted <- svyCreateTableOne(
+tabWeighted_full <- svyCreateTableOne(
   vars= datos_imputados_transformados_propensity %>% select(-Grup_IQ) %>% names(),
   strata = "Grup_IQ", 
   data = iptwdatos, 
   smd =TRUE)
 
+print(tabWeighted_full, smd = TRUE)
 
 # datos_imputados_propensity %>% 
 #   ggplot(aes(standarized_weights, fill= Grup_IQ )) +

@@ -6,3 +6,4 @@ datos <- read_sav("Datos/raw/V2_IQ_DataBase_IPTWOct23_Compensats_IQvsNoIQ.sav")
 
 
 
+
