@@ -63,20 +63,21 @@ datos_competing %>%
   select(Descompensacio,Temps_Descompensacio,TH,Temps_TH,Mort, Temps_Mort) %>%  
   mutate(
     Comp_Descompensacio= dplyr::case_when( 
-       Descompensacio == 0 &  TH == 0 & Mort == 0 ~ 0,
+       Descompensacio == 0 &  TH == 0 & Mort == 0                                       ~ 0,
       (Descompensacio == 1 & (TH == 1 | Mort == 1)) & (Temps_Descompensacio<= Temps_TH) ~ 1,
       (Descompensacio == 1 & (TH == 0 | Mort == 0)) & (Temps_Descompensacio<= Temps_TH) ~ 1,
-       Descompensacio == 1 &  TH == 1 & (Temps_TH <= Temps_Descompensacio) ~ 2,
-      (Descompensacio == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)~ 2,
-      TRUE ~ 0)) %>%
+       Descompensacio == 1 &  TH == 1 & (Temps_TH <= Temps_Descompensacio)              ~ 2,
+      (Descompensacio == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)          ~ 2,
+      TRUE ~ NA_integer_)) %>%
+  rowwise %>% 
   mutate(
     Temps_Comp_Descompensacio= dplyr::case_when( 
-       Descompensacio == 0 &  TH == 0 & Mort == 0 ~ Temps_Mort,
+       Descompensacio == 0 &  TH == 0 & Mort == 0                                       ~ max(Temps_Mort,Temps_TH, Temps_Descompensacio),
       (Descompensacio == 1 & (TH == 1 | Mort == 1)) & (Temps_Descompensacio<= Temps_TH) ~ Temps_Descompensacio,
-       Descompensacio == 1 &  TH == 1 & (Temps_TH <= Temps_Descompensacio) ~ Temps_TH,
-      (Descompensacio == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)~ Temps_TH,
-      TRUE ~ 0)) %>% 
-  writexl::write_xlsx('Competing_descompensacio.xlsx')
+      (Descompensacio == 1 & (TH == 0 | Mort == 0))                                     ~ Temps_Descompensacio,
+       Descompensacio == 1 &  TH == 1 & (Temps_TH <= Temps_Descompensacio)              ~ Temps_TH,
+      (Descompensacio == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)          ~ Temps_TH,
+      TRUE ~ NA_integer_))
 
 
 
