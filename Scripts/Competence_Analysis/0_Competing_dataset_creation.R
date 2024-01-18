@@ -1,11 +1,13 @@
 pacman::p_load('haven')
 source('Scripts/Lectura de datos.R')
 
+datos
 # HCC_prev
 # 
 # SignesIndirectes_HTP;VE_basal;CSHP 
 
 # Arreglament de variables ----
+
 
 datos_competing <- datos %>%  
   select(
@@ -115,7 +117,7 @@ Competing_Ascitis <- datos_competing %>%
 ## Sangnat Gastrointestinal Competing VS TH/Mort ----
 
 Competing_Sagnat_Gastrointestinal <- datos_competing %>% 
-  select(Sagnat_Gastrointestinal,Temps_Sagnat_Gastrointestinal,TH,Temps_TH,Mort, Temps_Mort) %>%  
+  select( Sagnat_Gastrointestinal,Temps_Sagnat_Gastrointestinal,TH,Temps_TH,Mort, Temps_Mort) %>%  
   mutate(
     Comp_Sagnat_Gastrointestinal= dplyr::case_when( 
        Sagnat_Gastrointestinal == 0 &  TH == 0 & Mort == 0                                                 ~ 0,
@@ -234,7 +236,8 @@ Competing_Infeccions_bacterianes <- datos_competing %>%
 
 # Dataset competing analysis ----
 
-list(
+Competing_dataset <- list(
+  datos %>% select(NHC,Grup_IQ),
   Competing_TH,
   Competing_Descompensacio,
   Competing_Ascitis,
@@ -243,10 +246,12 @@ list(
   Competing_Sagnat_Gastrointestinal,
   Competing_SBP,
   Competing_Infeccions_bacterianes)  %>%  
-  reduce(bind_cols) %>%  writexl::write_xlsx(.,'Dataset_competing.xlsx' )
+  reduce(bind_cols) %>% 
+  mutate_at(vars(starts_with('Comp')), ~haven::labelled(
+    .x, c('Censura'= 0,'Event'= 1,'Competing'=2), 
+    label = 'a' ))
 
-  
-
+rm(list=setdiff(ls(), "Competing_dataset"))
 
 
 
