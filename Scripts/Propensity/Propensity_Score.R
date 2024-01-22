@@ -3,47 +3,40 @@ library('survey')
 
 datos_imputados <- readRDS('Datos/Imputados/Datos_imputados.rds')
 
-datos_imputados_transformados_propensity <- datos_imputados %>% 
-  mutate(
-    DIabetes = droplevels(DIabetes,c('Metformina', 'Altres','ADO', 'dieta', 'ADO+Insulina','metformina+altres','ADO'))
-  )
 
-datos_imputados_transformados_propensity_2 <- datos_imputados %>% 
+# HCC
+# SignesIndirectes_HTP; ve; presenciaCSPH
+
+datos_imputados_transformados <- datos_imputados %>% 
   mutate(
     DIabetes = droplevels(DIabetes,c('Metformina', 'Altres','ADO', 'dieta', 'ADO+Insulina','metformina+altres','ADO')),
     SignesIndirectes_HTP = droplevels(SignesIndirectes_HTP,c('dubtós'))
   ) %>%
   select('Grup_IQ','edat_IQ','sexe_home',"IMC",'etiol_OH','Enol_Actiu',"Charlson_Index","plaquetes_preIQ","DIabetes",'Pughpunts_basal',
-         'colaterals_shunts','MELD_basal','Creat_mgdL_preIQ','Alb_gL_preIQ','BB_mgdL_preIQ','INR_preIQ')
+         'colaterals_shunts','MELD_basal','Creat_mgdL_preIQ','Alb_gL_preIQ','BB_mgdL_preIQ','INR_preIQ',
+         'HCC_prev',
+         'SignesIndirectes_HTP' )
+
+datos_imputados_transformados %>% writexl::write_xlsx('datos_imputados.xlsx')
+
 
 
 variables_propensity <- c(
-  'edat_IQ','sexe_home','IMC', 'etiol_OH','Enol_Actiu','Charlson_Index','plaquetes_preIQ','DIabetes','Pughpunts_basal',
-  'colaterals_shunts','MELD_basal','Creat_mgdL_preIQ', 'Alb_gL_preIQ','BB_mgdL_preIQ','INR_preIQ'
-  
-  # 'MidaMelsa_mm', 'Pughpunts_basal',
-  # ,'Creat_mgdL_preIQ','IMC','VG_fúndiques','TTO_Estatinas','ALT_preIQ',
-  # 'AST_preIQ', 'DIabetes'
-  )
+ 'SignesIndirectes_HTP','HCC_prev','edat_IQ','sexe_home','etiol_OH','IMC','Charlson_Index', 'Pughpunts_basal','Enol_Actiu','DIabetes',
+ 'colaterals_shunts','MELD_basal','plaquetes_preIQ','Alb_gL_preIQ','INR_preIQ'
+)
 
 mod_propensity <- glm(
   formula = Grup_IQ ~  
-    # DIabetes +
-    I(edat_IQ^2) + sexe_home + IMC + log(plaquetes_preIQ) + Pughpunts_basal + Charlson_Index + 
-    colaterals_shunts + MELD_basal + Alb_gL_preIQ + Creat_mgdL_preIQ + BB_mgdL_preIQ + INR_preIQ+ 
-    
-    DIabetes + etiol_OH + Enol_Actiu
-    # log(MidaMelsa_mm) +
-    # Pughpunts_basal+
-  
-    # IMC+
-    # VG_fúndiques+
-    # I(Creat_mgdL_preIQ^(2)) +
-    # ALT_preIQ +
-    # TTO_Estatinas+
-    # log(AST_preIQ) + I(AST_preIQ^(2))
+    SignesIndirectes_HTP + I(edat_IQ^2) +HCC_prev +sexe_home +etiol_OH +log(IMC) +
+    log(Charlson_Index) +
+    I(Pughpunts_basal^3)+log(Pughpunts_basal) +Enol_Actiu +DIabetes +colaterals_shunts +
+    log(MELD_basal) + I(MELD_basal^3) +
+    I(plaquetes_preIQ^-3)+
+    Alb_gL_preIQ
+
   , 
-  data = datos_imputados_transformados_propensity_2, 
+  data = datos_imputados_transformados, 
   family=binomial(link="logit") )
 
 datos_imputados_propensity <- datos_imputados %>% 
@@ -56,44 +49,25 @@ datos_imputados_propensity <- datos_imputados_propensity %>%
   )) 
 
 
-
-iptwdatos <- svydesign(
+iptwdatos_propensity <- svydesign(
   ids = ~ 1, 
-  data = datos_imputados_transformados_propensity_2,
+  data = datos_imputados_transformados,
   strata = ~Grup_IQ,
   weights = ~ datos_imputados_propensity$standarized_weights)
 
-tabWeighted <- svyCreateTableOne(
-  vars= datos_imputados_transformados_propensity_2 %>% select(-Grup_IQ) %>% names(),
+Propensity_table_Weighted <- svyCreateTableOne(
+  vars= datos_imputados_transformados %>% select(-Grup_IQ) %>% names(),
   strata = "Grup_IQ", 
   data = iptwdatos_propensity, 
   smd =TRUE)
 
-print(tabWeighted, smd = TRUE)
+print(Propensity_table_Weighted, smd = TRUE)
 
-
-# datos_imputados_propensity$standarized_weights
-
-iptwdatos_propensity <- svydesign(
-  ids = ~ 1, 
-  data = datos_imputados_transformados_propensity,
-  strata = ~Grup_IQ,
-  weights = ~ datos_imputados_propensity$standarized_weights)
-
-tabWeighted_full <- svyCreateTableOne(
-  vars= datos_imputados_transformados_propensity %>% select(-Grup_IQ) %>% names(),
-  strata = "Grup_IQ", 
-  data = iptwdatos, 
-  smd =TRUE)
-
-print(tabWeighted_full, smd = TRUE)
-
-# datos_imputados_propensity %>% 
+# datos_imputados_propensity %>%
 #   ggplot(aes(standarized_weights, fill= Grup_IQ )) +
 #   geom_density()
 # 
 # 
-# datos_imputados_propensity %>% 
+# datos_imputados_propensity %>%
 #   ggplot(aes(prediciones, fill= Grup_IQ )) +
 #   geom_histogram(color='black',alpha=0.8)
-

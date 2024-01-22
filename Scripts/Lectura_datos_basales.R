@@ -39,6 +39,7 @@ datos_basales <- datos %>%
     HCC_prev,
     MELD_basal,
     MELD_1anyspostIQ,
+    presenciaCSPH,
     respostHDK_aguda, respostHDK_crònica) %>% 
   mutate(
     # Creamos las dislipemias:

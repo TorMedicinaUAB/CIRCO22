@@ -24,5 +24,5 @@ imputation_model <- mice(
 imputed_data <- complete(imputation_model) %>% as_tibble()
 
 # imputed_data %>% naniar::vis_miss()
-
+# 
 # imputed_data %>%  write_rds(., 'Datos/Imputados/Datos_imputados.rds')
