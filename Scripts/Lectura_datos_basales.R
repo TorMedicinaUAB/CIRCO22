@@ -2,6 +2,7 @@ source('Scripts/Lectura de datos.R')
 
 datos_basales <- datos %>% 
   select(
+    NHC,
     # Grupos a diferenciar en el experimento CIRCO22, esta es la variable clave.
     Grup_IQ,
     #identificadoras
@@ -40,6 +41,7 @@ datos_basales <- datos %>%
     MELD_basal,
     MELD_1anyspostIQ,
     presenciaCSPH,
+    ve,
     respostHDK_aguda, respostHDK_crònica) %>% 
   mutate(
     # Creamos las dislipemias:
@@ -50,6 +52,6 @@ datos_basales <- datos %>%
   select(-malalties_associades1) %>% 
   # Extraemos los los factores, en lugar de dejarlos como variables numericas (si hace falta ya haremos el One_hot encoding más tarde)
   mutate_if(function(x) inherits(x, "haven_labelled"), ~ haven::as_factor(.)) %>% 
+  mutate(identificador = 1:371) %>% 
   # reordenamos un poco el data.frame para que sea fácil de seguir luego
-  select( Grup_IQ,edat_IQ,sexe_home,Pes,Talla_m,IMC, where(is.numeric), where(is.factor))
-
+  select(NHC,identificador,Grup_IQ,edat_IQ,sexe_home,Pes,Talla_m,IMC, where(is.numeric), where(is.factor))

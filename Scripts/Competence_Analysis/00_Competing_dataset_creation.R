@@ -1,16 +1,18 @@
 pacman::p_load('haven')
 source('Scripts/Lectura de datos.R')
+Datos_propensity <- readRDS('Datos/Datos_propensity.rds')
 
-datos
-# HCC_prev
-# 
-# SignesIndirectes_HTP;VE_basal;CSHP 
 
 # Arreglament de variables ----
 
+Datos_propensity_2 <- Datos_propensity %>%  
+  select(identificador, prediciones, standarized_weights) %>% 
+  rename('prob_competing'='prediciones' )
 
-datos_competing <- datos %>%  
+datos_competing <- datos %>%
+  mutate(identificador = 1:371) %>% 
   select(
+    NHC,identificador,Grup_IQ,
     TH,Temps_finsaeventTH_mesos, # muerte
     mort,Temps_finseventMORT_mesos, # trasplantamiento
     Descompensació_seguiment_global ,Temps_RIMERADESCOMPENSACIO_mesos, # descompensación
@@ -21,6 +23,7 @@ datos_competing <- datos %>%
     HCCdeNOVO_seguimentPostAlta,temps_finseventHCCdenovo, # Hepatocellular carcinoma
     Infeccio_PostIQ,Temps_ingrés_dies #Other Bacterial infections, comprobar si hay en los dos grupos
     )    %>% 
+  inner_join( ., Datos_propensity_2 , by= c('identificador'='identificador')) %>% 
   mutate( Temps_SBP = te_ascites) %>% 
   rename(
     'Temps_TH'='Temps_finsaeventTH_mesos',
@@ -41,7 +44,8 @@ datos_competing <- datos %>%
     'Infeccions_bacterianes' = 'Infeccio_PostIQ',
     'Temps_Infeccions_bacterianes' = 'Temps_ingrés_dies'
   )
- 
+
+datos_competing 
 # Competing preparaion ------
 ## TH competing amb Mort ----
 
@@ -62,8 +66,31 @@ Competing_TH <- datos_competing %>%
     (TH == 0 & Mort == 1) ~ Temps_Mort,
     (TH == 1 & Mort == 0) & (Temps_TH<=Temps_Mort) ~ Temps_TH,
     (TH == 1 & Mort == 1) & (Temps_TH<=Temps_Mort) ~ Temps_TH,
-    TRUE ~ NA_integer_)) 
+    TRUE ~ NA_integer_)) %>% 
+  select(-c(TH,Temps_TH,Mort, Temps_Mort))
+
+
+
   
+Competing_Mort <- datos_competing %>% 
+  select(TH,Temps_TH,Mort, Temps_Mort) %>%  
+  mutate(
+    Competing_Mort = dplyr::case_when( 
+      (TH == 0 & Mort == 0) ~ 0,
+      (TH == 0 & Mort == 1) ~ 1,
+      (TH == 0 & Mort == 1) & (Temps_Mort<=Temps_TH) ~ 2,
+      (TH == 1 & Mort == 1) & (Temps_Mort<=Temps_TH) ~ 2,
+      TRUE ~ NA_integer_
+    )) %>% 
+  mutate(
+    Temps_Comp_Mort = dplyr::case_when( 
+      (TH == 0 & Mort == 0) ~ Temps_Mort,
+      (TH == 0 & Mort == 1) ~ Temps_Mort,
+      (TH == 0 & Mort == 1) & (Temps_Mort<=Temps_TH) ~ Temps_Mort,
+      (TH == 1 & Mort == 1) & (Temps_Mort<=Temps_TH) ~ Temps_Mort,
+      TRUE ~ NA_integer_)) %>% 
+  select(-c(TH,Temps_TH,Mort, Temps_Mort))
+
   
 ## Descompensacio Competing VS TH/Mort ----
 
@@ -168,19 +195,19 @@ Competing_SBP <-  datos_competing %>%
   select(SBP,Temps_SBP, TH , Temps_TH , Mort, Temps_Mort) %>%  
   mutate(
     Comp_SBP= dplyr::case_when( 
-      SBP == 0 &  TH == 0 & Mort == 0                                                ~ 0,
+       SBP == 0 &  TH == 0 & Mort == 0                                                ~ 0,
       (SBP == 1 & (TH == 1 | Mort == 1)) & (Temps_SBP<= Temps_TH)  ~ 1,
       (SBP == 1 & (TH == 0 | Mort == 0)) & (Temps_SBP<= Temps_TH)  ~ 1,
-      SBP == 1 &  TH == 1 & (Temps_TH <= Temps_SBP)               ~ 2,
+       SBP == 1 &  TH == 1 & (Temps_TH <= Temps_SBP)               ~ 2,
       (SBP == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)                   ~ 2,
       TRUE ~ NA_integer_)) %>%
   rowwise %>% 
   mutate(
     Temps_Comp_SBP= dplyr::case_when( 
-      SBP == 0 &  TH == 0 & Mort == 0                                                 ~ max(Temps_Mort,Temps_TH, Temps_SBP),
+       SBP == 0 &  TH == 0 & Mort == 0                                                 ~ max(Temps_Mort,Temps_TH, Temps_SBP),
       (SBP == 1 & (TH == 1 | Mort == 1)) & (Temps_SBP<= Temps_TH)   ~ Temps_SBP,
       (SBP == 1 & (TH == 0 | Mort == 0))                                               ~ Temps_SBP,
-      SBP == 1 &  TH == 1 & (Temps_TH <= Temps_SBP)                ~ Temps_TH,
+       SBP == 1 &  TH == 1 & (Temps_TH <= Temps_SBP)                ~ Temps_TH,
       (SBP == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)                    ~ Temps_TH,
       TRUE ~ NA_integer_)) %>% 
   select(-c(TH,Temps_TH,Mort, Temps_Mort))
@@ -192,19 +219,19 @@ Competing_Carcinoma_Hepatocelular <- datos_competing %>%
   select(Carcinoma_Hepatocelular,Temps_Carcinoma_Hepatocelular, TH , Temps_TH , Mort, Temps_Mort) %>%  
   mutate(
     Comp_Carcinoma_Hepatocelular= dplyr::case_when( 
-      Carcinoma_Hepatocelular == 0 &  TH == 0 & Mort == 0                                  ~ 0,
+       Carcinoma_Hepatocelular == 0 &  TH == 0 & Mort == 0                                  ~ 0,
       (Carcinoma_Hepatocelular == 1 & (TH == 1 | Mort == 1)) & (Temps_Carcinoma_Hepatocelular<= Temps_TH)  ~ 1,
       (Carcinoma_Hepatocelular == 1 & (TH == 0 | Mort == 0)) & (Temps_Carcinoma_Hepatocelular<= Temps_TH)  ~ 1,
-      Carcinoma_Hepatocelular == 1 &  TH == 1 & (Temps_TH <= Temps_Carcinoma_Hepatocelular)                ~ 2,
+       Carcinoma_Hepatocelular == 1 &  TH == 1 & (Temps_TH <= Temps_Carcinoma_Hepatocelular)                ~ 2,
       (Carcinoma_Hepatocelular == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)    ~ 2,
       TRUE ~ NA_integer_)) %>%
   rowwise %>% 
   mutate(
     Temps_Comp_Carcinoma_Hepatocelular= dplyr::case_when( 
-      Carcinoma_Hepatocelular == 0 &  TH == 0 & Mort == 0                                       ~ max(Temps_Mort,Temps_TH, Temps_Carcinoma_Hepatocelular),
+       Carcinoma_Hepatocelular == 0 &  TH == 0 & Mort == 0                                       ~ max(Temps_Mort,Temps_TH, Temps_Carcinoma_Hepatocelular),
       (Carcinoma_Hepatocelular == 1 & (TH == 1 | Mort == 1)) & (Temps_Carcinoma_Hepatocelular<= Temps_TH)       ~ Temps_Carcinoma_Hepatocelular,
       (Carcinoma_Hepatocelular == 1 & (TH == 0 | Mort == 0))                                    ~ Temps_Carcinoma_Hepatocelular,
-      Carcinoma_Hepatocelular == 1 &  TH == 1 & (Temps_TH <= Temps_Carcinoma_Hepatocelular)                     ~ Temps_TH,
+       Carcinoma_Hepatocelular == 1 &  TH == 1 & (Temps_TH <= Temps_Carcinoma_Hepatocelular)                     ~ Temps_TH,
       (Carcinoma_Hepatocelular == 0 & (TH == 1 | Mort == 1)) & (Temps_TH <= Temps_Mort)         ~ Temps_TH,
       TRUE ~ NA_integer_)) %>% 
   select(-c(TH,Temps_TH,Mort, Temps_Mort))
@@ -237,8 +264,9 @@ Competing_Infeccions_bacterianes <- datos_competing %>%
 # Dataset competing analysis ----
 
 Competing_dataset <- list(
-  datos %>% select(NHC,Grup_IQ),
+  datos_competing %>% select(NHC,identificador,Grup_IQ),
   Competing_TH,
+  Competing_Mort,
   Competing_Descompensacio,
   Competing_Ascitis,
   Competing_Carcinoma_Hepatocelular,
@@ -251,7 +279,9 @@ Competing_dataset <- list(
     .x, c('Censura'= 0,'Event'= 1,'Competing'=2), 
     label = 'a' ))
 
-rm(list=setdiff(ls(), "Competing_dataset"))
+Competing_dataset
 
-
+# rm(list=setdiff(ls(), "Competing_dataset"))
+# 
+# writexl::write_xlsx(Competing_dataset,'Competing_dataset.xlsx')
 

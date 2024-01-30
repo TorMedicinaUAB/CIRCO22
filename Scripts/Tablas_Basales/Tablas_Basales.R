@@ -153,5 +153,5 @@ Tabla_basal
 
 # Exportamos la tabla final conseguida----
 
-# Tabla_basal %>%
-#   writexl::write_xlsx(.,'Outputs/Tablas_basales/Tabla_basal_con_missings.xlsx')
+Tabla_basal %>%
+  writexl::write_xlsx(.,'Outputs/Tablas_basales/Tabla_basal_con_missings.xlsx')

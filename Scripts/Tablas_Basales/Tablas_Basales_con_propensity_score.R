@@ -10,7 +10,6 @@ Tabla_basal_propensity <- print(
   # de base, TableOne crea una categoria basal, con este argument, muestra todos los niveles
   showAllLevels = T ,
   noSpaces = F,
-  addOverall =T,
   smd = T) %>%
   as_tibble(., rownames = "Variables") %>%
   mutate(aux = str_extract(Variables, "(.*) \\(")) %>%
@@ -21,12 +20,12 @@ Tabla_basal_propensity
 # Añadiendo missings a TableOne ----
 # para sacar los missing values, haremos dos tablas de missings, una con los totales y otra stratificada por el grupo clave
 
-Missings_overall <- datos_imputados %>% 
+Missings_overall <- datos_imputados_transformados %>% 
   select(Grup_IQ,where(is.numeric))  %>% 
   summarize_all(~sum(is.na(.))) %>%  
   mutate(Grup_IQ = as.factor('Overall'))
 
-Missings_stratified <- datos_imputados %>% 
+Missings_stratified <- datos_imputados_transformados %>% 
   select(Grup_IQ,where(is.numeric))  %>% 
   group_by(Grup_IQ) %>% 
   summarize_all(~sum(is.na(.)))
@@ -62,15 +61,17 @@ Lista_propensity_imputada <- Tabla_basal_propensity %>%
     ## primero los recuentos totales
     Variables == 'n'~1,
     # Luego las variables identificadoras
-    str_detect(aux_2,'Pes|sexe_home|edat|Talla|IMC') ~ 2,
+    str_detect(aux_2,'sexe_home|edat|IMC') ~ 2,
     ## las variables numericas
     str_detect(aux_2,'IQR|missing') ~ 3, 
     ## Finalmente las variables factor
     !str_detect(aux_2,'IQR|missing')|is.na(Variables) ~ 4)) %>%
   # ordenamos por; grupos, variable, subfncion de variable (numericas) y nivel (para las factor)
-  arrange(aux_3, aux, aux_2) %>% 
+  arrange(aux_3, aux_2, aux) %>% 
   group_split(aux_3) %>%  
   as.list()
+
+Lista_propensity_imputada
 
 # arreglamos la parte numerica
 Lista_propensity_imputada[1:3] <- Lista_propensity_imputada[1:3] %>% 
@@ -87,12 +88,12 @@ Tabla_basal_propensity_final <- Lista_propensity_imputada %>%
   bind_rows() %>% 
   select(-matches('aux'))
 
-Tabla_basal_propensity_final
+Tabla_basal_propensity_final 
 
 # Exportamos la tabla final conseguida----
 
-Tabla_basal_propensity_final %>%
-  writexl::write_xlsx(.,'Outputs/Tablas_basales/Tabla_basal_propensity.xlsx')
+# Tabla_basal_propensity_final %>%
+#   writexl::write_xlsx(.,'Outputs/Tablas_basales/Tabla_basal_propensity.xlsx')
 
 
 

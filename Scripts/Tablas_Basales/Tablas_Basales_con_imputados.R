@@ -108,5 +108,13 @@ Tabla_basal_imputada_final <- Lista_basal_imputada %>%
 
 # Exportamos la tabla final conseguida----
 
-# Tabla_basal_imputada_final %>%
-#   writexl::write_xlsx(.,'Outputs/Tablas_basales/Tabla_basal_sin_missings.xlsx')
+Tabla_basal_imputada_final %>%
+  writexl::write_xlsx(.,'Outputs/Tablas_basales/Tabla_basal_sin_missings.xlsx')
+
+
+writexl::write_xlsx(datos_imputados,'datos_imputados.xlsx')
+
+
+datos_imputados$ve
+datos_imputados$presenciaCSPH
+datos_imputados$Pughclasse_basal
