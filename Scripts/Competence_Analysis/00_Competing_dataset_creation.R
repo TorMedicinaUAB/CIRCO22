@@ -264,7 +264,7 @@ Competing_Infeccions_bacterianes <- datos_competing %>%
 # Dataset competing analysis ----
 
 Competing_dataset <- list(
-  datos_competing %>% select(NHC,identificador,Grup_IQ),
+  datos_competing %>% select(NHC,identificador,Grup_IQ,prob_competing,standarized_weights ),
   Competing_TH,
   Competing_Mort,
   Competing_Descompensacio,
@@ -282,6 +282,6 @@ Competing_dataset <- list(
 Competing_dataset
 
 # rm(list=setdiff(ls(), "Competing_dataset"))
-# 
+
 # writexl::write_xlsx(Competing_dataset,'Competing_dataset.xlsx')
 
