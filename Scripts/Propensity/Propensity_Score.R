@@ -1,5 +1,4 @@
 source('Scripts/Lectura_datos_basales.R')
-library('survey')
 
 datos_imputados <- readRDS('Datos/Imputados/Datos_imputados.rds') %>% 
   select(NHC, identificador, everything())
@@ -52,13 +51,21 @@ datos_imputados_propensity <- datos_imputados_propensity %>%
   )) 
 
 datos_imputados_propensity
-# Filtrado de pacientes excluídos por no encajar en ningún matching.
 
-datos_imputados_transformados <- datos_imputados_propensity %>% 
+# Filtrado de pacientes excluídos por no encajar en ningún propensity score ----
+
+Pacientes_excluidos_propensity <- datos_imputados_propensity %>% 
+  filter(!between(prediciones,0.1,0.9)) %>% 
+  select(-c(prediciones,standarized_weights))
+
+Pacientes_excluidos_propensity$identificador
+# Filtrado de pacientes incluidos por  encajar en  propensity score ---- 
+
+Pacientes_incluidos_propensity <- datos_imputados_propensity %>% 
   filter(between(prediciones,0.1,0.9)) %>% 
   select(-c(prediciones,standarized_weights))
 
-datos_imputados_transformados
+Pacientes_incluidos_propensity
 
 mod_propensity <- glm(
   formula = Grup_IQ ~  
@@ -76,37 +83,35 @@ mod_propensity <- glm(
     Creat_mgdL_preIQ +
     INR_preIQ
   , 
-  data = datos_imputados_transformados, 
+  data = Pacientes_incluidos_propensity, 
   family=binomial(link="logit") )
 
-datos_imputados_propensity <- datos_imputados_transformados %>% 
-  mutate(prediciones=predict(mod_propensity,datos_imputados_transformados,type="response") )
-
-datos_imputados_propensity <- datos_imputados_propensity %>% 
+Pacientes_incluidos_propensity <- Pacientes_incluidos_propensity %>% 
+  mutate(prediciones=predict(mod_propensity,Pacientes_incluidos_propensity,type="response") ) %>% 
   mutate(standarized_weights = case_when(
     Grup_IQ == 'Si IQ' ~ (177/(371))/ (  prediciones),
     Grup_IQ == 'No IQ' ~ (194/(371))/ (1-prediciones) 
   )) 
 
-datos_imputados_propensity %>%  write_rds(., 'Datos/Datos_propensity.rds')
+# datos_imputados_propensity %>%  write_rds(., 'Datos/Datos_propensity.rds')
 
 
 # Datos propensity ----
 
-iptwdatos_propensity <- svydesign(
+Pacientes_incluidos_iptwdatos_propensity <- svydesign(
   ids = ~ 1, 
-  data = datos_imputados_transformados,
+  data = Pacientes_incluidos_propensity,
   strata = ~Grup_IQ,
-  weights = ~ datos_imputados_propensity$standarized_weights)
+  weights = ~ Pacientes_incluidos_propensity$standarized_weights)
 
-Propensity_table_Weighted <- svyCreateTableOne(
-  vars= datos_imputados_transformados %>% select(-c(Grup_IQ, NHC, identificador)) %>% names(),
+Pacientes_incluidos_Propensity_table_Weighted <- svyCreateTableOne(
+  vars= Pacientes_incluidos_propensity %>% select(-c(Grup_IQ, NHC, identificador)) %>% names(),
   strata = "Grup_IQ", 
-  data = iptwdatos_propensity, 
+  data = Pacientes_incluidos_iptwdatos_propensity, 
   addOverall = T,
   smd =TRUE)
 
-print(Propensity_table_Weighted, smd = TRUE)
+print(Pacientes_incluidos_Propensity_table_Weighted, smd = TRUE)
 
 # datos_imputados_propensity %>%
 #   ggplot(aes(standarized_weights, fill= Grup_IQ  )) +
