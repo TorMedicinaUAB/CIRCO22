@@ -9,6 +9,8 @@ Tabla_pacientes_raw_excluidos <- CreateTableOne(
   data = datos_basales %>% filter(identificador %in% Pacientes_excluidos_propensity$identificador),
   vars = datos_basales %>%  select(-c(NHC,identificador, Grup_IQ)) %>%  names(),
   strata = "Grup_IQ",
+  includeNA = T,
+  addOverall = T,
   smd = T) %>% 
   print(., smd = TRUE) %>% 
   as_tibble(., rownames = "Variables")

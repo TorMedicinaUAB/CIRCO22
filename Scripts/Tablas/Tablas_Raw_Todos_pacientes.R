@@ -6,12 +6,15 @@ datos_basales
 
 # Datos propensity ----
 
+
 Tabla_pacientes_raw_Todos <- CreateTableOne(
   data = datos_basales,
   vars = datos_basales %>%  select(-c(NHC,identificador, Grup_IQ)) %>%  names(),
   strata = "Grup_IQ",
+  includeNA = T,
+  addOverall = T,
   smd = T) %>% 
-  print(., smd = TRUE) %>% 
+  print(.,add_overall= T,smd = TRUE) %>% 
   as_tibble(., rownames = "Variables")
 
 

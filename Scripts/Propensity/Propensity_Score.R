@@ -109,6 +109,7 @@ Pacientes_incluidos_Propensity_table_Weighted <- svyCreateTableOne(
   strata = "Grup_IQ", 
   data = Pacientes_incluidos_iptwdatos_propensity, 
   addOverall = T,
+  includeNA = T,
   smd =TRUE)
 
 print(Pacientes_incluidos_Propensity_table_Weighted, smd = TRUE)
